@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+torch
+transformers
+sentence-transformers
+faiss-cpu
+beautifulsoup4
+requests
+numpy
