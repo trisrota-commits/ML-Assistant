@@ -18,6 +18,10 @@ Hallucination mitigation via similarity thresholding
 
 FastAPI + Gradio interface
 
+Agentic retrieval is available at `POST /agent-query`. It uses the top FAISS
+similarity score to answer with grounded context, rewrite and retry weak
+queries once, and explicitly labels the final fallback as ungrounded.
+
 
 Evaluation
 
