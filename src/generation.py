@@ -14,9 +14,20 @@ MODE_PROMPTS = {
 }
 
 
-def generate_answer(question: str, context: str, mode: str = "concise"):
+def generate_answer(
+    question: str,
+    context: str,
+    mode: str = "concise",
+    grounded: bool = True,
+):
     system_prompt = MODE_PROMPTS[mode]
-    system_prompt += " Answer only using the provided context. If insufficient, say so."
+    if grounded:
+        system_prompt += " Answer only using the provided context. If insufficient, say so."
+    else:
+        system_prompt += (
+            " No retrieved context was available. Answer from general knowledge, "
+            "and clearly state that the answer is not grounded in the document collection."
+        )
 
     prompt = f"""<|system|>
 {system_prompt}
@@ -48,5 +59,23 @@ Question: {question}
             pad_token_id=tokenizer.eos_token_id,
         )
 
+    new_tokens = outputs[0][inputs["input_ids"].shape[-1]:]
+    return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+
+
+def rewrite_query(question: str) -> str:
+    """Rewrite a query toward terminology likely to occur in the source blogs."""
+    prompt = (
+        "Rewrite the following information-retrieval query using precise machine-learning "
+        "terminology. Return only the rewritten query.\n\nQuery: " + question
+    )
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to("cpu")
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=40,
+            do_sample=False,
+            pad_token_id=tokenizer.eos_token_id,
+        )
     new_tokens = outputs[0][inputs["input_ids"].shape[-1]:]
     return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()

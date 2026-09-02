@@ -19,6 +19,9 @@ class Retriever:
         self.index.add(embeddings)
 
     def retrieve(self, query: str, k: int = 5):
+        k = min(k, len(self.documents))
+        if k == 0:
+            return []
         q_emb = self.embedder.encode(
             [query],
             normalize_embeddings=True

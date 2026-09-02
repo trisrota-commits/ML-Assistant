@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from src.agent import agentic_query
 from src.rag_core import query_rag
 
 app = FastAPI(title="ML RAG Assistant")
@@ -36,5 +37,23 @@ def query(request: QueryRequest):
             "retrieved_ids": retrieved_ids
         }
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/agent-query")
+def agent_query(request: QueryRequest):
+    if not request.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty.")
+
+    try:
+        answer, results, metadata = agentic_query(request.question)
+        return {
+            "question": request.question,
+            "answer": answer,
+            "retrieved_ids": [int(result["id"]) for result in results],
+            "route": metadata["route"],
+            "trace": metadata["trace"],
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
