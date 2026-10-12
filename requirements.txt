@@ -1,9 +1,11 @@
 fastapi
 uvicorn
-torch
+torch==2.8.0
 transformers
 sentence-transformers
 faiss-cpu
 beautifulsoup4
 requests
 numpy
+gradio>=4,<7
+spaces

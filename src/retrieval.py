@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 class Retriever:
     def __init__(self, documents):
         self.documents = documents
-        self.embedder = SentenceTransformer("all-MiniLM-L6-v2")
+        self.embedder = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
 
         embeddings = self.embedder.encode(
             [doc["text"] for doc in documents],

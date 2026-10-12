@@ -1,3 +1,14 @@
+---
+title: ML RAG Assistant
+emoji: 🔎
+colorFrom: blue
+colorTo: purple
+sdk: gradio
+app_file: hf_app.py
+python_version: "3.10"
+pinned: false
+---
+
 # ML RAG Assistant
 
 A compact Retrieval-Augmented Generation (RAG) system for answering machine-learning questions from a curated collection of technical blog posts. It demonstrates document ingestion, tokenized chunking, dense-vector retrieval with FAISS, grounded generation with TinyLlama, retrieval evaluation, and an agentic retry path.
@@ -46,7 +57,7 @@ agentic_query
 - `src/data_loader.py` fetches HTML with `requests` and extracts `<p>` elements with BeautifulSoup.
 - `src/chunking.py` uses 400-word windows with 100-word overlap, then tokenizes and decodes each chunk using TinyLlama's tokenizer.
 - `src/retrieval.py` normalizes embeddings and uses `faiss.IndexFlatIP`. With normalized vectors, inner product is equivalent to cosine similarity.
-- `src/generation.py` runs `TinyLlama/TinyLlama-1.1B-Chat-v1.0` on CPU.
+- `src/generation.py` runs `TinyLlama/TinyLlama-1.1B-Chat-v1.0` on CPU by default, or through ZeroGPU when `RAG_DEVICE=cuda`.
 - `src/agent.py` uses deterministic score-based routing rather than relying on TinyLlama to emit a reliable tool-call JSON object.
 - `app.py` keeps the original `/query` endpoint and adds `/agent-query`, which returns the answer, retrieved IDs, route, and decision trace.
 
@@ -100,12 +111,22 @@ The CLI prints the answer, retrieved IDs, selected route, and routing trace.
 
 ### Gradio
 
-`hf_app.py` contains a Gradio interface. Install Gradio separately if it is not already present in your environment because it is not currently listed in `requirements.txt`:
+`hf_app.py` calls the agentic loop and displays its answer, route, retrieval IDs, and decision trace. Gradio is included in `requirements.txt`:
 
 ```bash
-python -m pip install gradio
 python hf_app.py
 ```
+
+### Hugging Face ZeroGPU deployment
+
+1. Create a Gradio Space and select **ZeroGPU** hardware. Eligibility and quotas are described in the [official documentation](https://huggingface.co/docs/hub/spaces-zerogpu).
+2. In the Space's **Settings → Variables and secrets**, add a variable named `RAG_DEVICE` with value `cuda`.
+3. Upload this repository's source, including this `README.md`, `requirements.txt`, `hf_app.py`, and the `src/` directory. Do not upload local environments or credentials.
+4. Wait for the build and startup to complete, then submit a question and inspect **Agent decisions**. A successful build alone does not verify inference.
+
+TinyLlama loads onto CUDA during startup under Spaces emulation. Answer generation and query rewriting each request GPU time through `spaces.GPU`; MiniLM retrieval remains on CPU. Local execution defaults to CPU and does not request a GPU. The existing FastAPI endpoints remain in `app.py`; this Space launches the Gradio interface instead.
+
+Startup still downloads models and fetches the blog collection. ZeroGPU queues, quotas, and cold starts apply. These files configure deployment; they do not create or publish a Space automatically.
 
 ## Evaluation
 
@@ -129,7 +150,7 @@ app.py                 FastAPI application and HTTP endpoints
 hf_app.py              Gradio interface
 main.py                Interactive CLI
 requirements.txt       Python dependencies
-render.yaml            Render web-service configuration
+
 src/data_loader.py     HTML fetching and text cleaning
 src/chunking.py        Overlapping tokenizer-backed chunking
 src/retrieval.py       MiniLM embeddings and FAISS search
