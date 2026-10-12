@@ -42,7 +42,7 @@ That answer is stronger than saying only “I used FAISS.”
 | 7 | `app.py` | HTTP API behavior and response shape |
 | 8 | `src/evaluation.py` | Recall/MRR implementation and its caveats |
 | 9 | `tests/test_agent.py` | How the agent loop is tested without model downloads |
-| 10 | `render.yaml` | The deployment command |
+| 10 | `README.md` | Hugging Face Space configuration and deployment instructions |
 
 ### Symbols worth tracing
 

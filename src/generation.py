@@ -1,3 +1,10 @@
+import os
+
+# Import Spaces before torch/model initialization to enable ZeroGPU emulation.
+DEVICE = os.environ.get("RAG_DEVICE", "cpu")
+if DEVICE == "cuda":
+    import spaces
+
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -5,7 +12,7 @@ MODEL_ID = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 model = AutoModelForCausalLM.from_pretrained(MODEL_ID)
-model.to("cpu")
+model.to(DEVICE)
 model.eval()
 
 MODE_PROMPTS = {
@@ -46,7 +53,7 @@ Question: {question}
         return_tensors="pt",
         truncation=True,
         max_length=1800
-    ).to("cpu")
+    ).to(DEVICE)
 
     with torch.no_grad():
         outputs = model.generate(
@@ -69,7 +76,7 @@ def rewrite_query(question: str) -> str:
         "Rewrite the following information-retrieval query using precise machine-learning "
         "terminology. Return only the rewritten query.\n\nQuery: " + question
     )
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to("cpu")
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to(DEVICE)
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
@@ -79,3 +86,8 @@ def rewrite_query(question: str) -> str:
         )
     new_tokens = outputs[0][inputs["input_ids"].shape[-1]:]
     return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+
+
+if DEVICE == "cuda":
+    generate_answer = spaces.GPU(generate_answer)
+    rewrite_query = spaces.GPU(rewrite_query)
