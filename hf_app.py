@@ -6,8 +6,8 @@ if os.environ.get("RAG_DEVICE", "cpu") == "cuda":
 
 import gradio as gr
 from src.agent import agentic_query
-# Initialize models and the index before ZeroGPU request handlers run.
-from src.rag_core import retriever
+# Load CUDA weights before ZeroGPU packs tensors; defer CPU encoding to its worker.
+from src.generation import model
 
 def ask(question):
     answer, results, metadata = agentic_query(question)
@@ -15,6 +15,9 @@ def ask(question):
         **metadata,
         "retrieved_ids": [int(result["id"]) for result in results],
     }
+
+if os.environ.get("RAG_DEVICE", "cpu") == "cuda":
+    ask = spaces.GPU(ask)
 
 demo = gr.Interface(
     fn=ask,

@@ -124,7 +124,7 @@ python hf_app.py
 3. Upload this repository's source, including this `README.md`, `requirements.txt`, `hf_app.py`, and the `src/` directory. Do not upload local environments or credentials.
 4. Wait for the build and startup to complete, then submit a question and inspect **Agent decisions**. A successful build alone does not verify inference.
 
-TinyLlama loads onto CUDA during startup under Spaces emulation. Answer generation and query rewriting each request GPU time through `spaces.GPU`; MiniLM retrieval remains on CPU. Local execution defaults to CPU and does not request a GPU. The existing FastAPI endpoints remain in `app.py`; this Space launches the Gradio interface instead.
+TinyLlama loads onto CUDA during startup under Spaces emulation. The Gradio agent handler requests GPU time through `spaces.GPU`; retrieval initializes on its first worker request. MiniLM remains on CPU, but its encoding runs inside the initialized worker: encoding before the ZeroGPU fork caused CUDA initialization failures in deployment. Local execution defaults to CPU and does not request a GPU. The existing FastAPI endpoints remain in `app.py`; this Space launches the Gradio interface instead.
 
 Startup still downloads models and fetches the blog collection. ZeroGPU queues, quotas, and cold starts apply. These files configure deployment; they do not create or publish a Space automatically.
 
